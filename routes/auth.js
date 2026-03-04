@@ -6,60 +6,74 @@ var User = require("../models/User.js");
 const router = Router();
 
 router.post("/register", async (req, res) => {
-  const user = new User(req.body);
-  await user.save();
-  res.json("User Saved in DB");
+  try {
+    console.log("Register request:", req.body);
+
+    const user = new User(req.body);
+    const savedUser = await user.save();
+
+    console.log("Saved user:", savedUser);
+
+    res.json(savedUser);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error saving user" });
+  }
 });
 
 router.post("/login", async (req, res) => {
-  const user = req.body;
-  const email = user.email;
-  const password = user.password;
+  const { email, password } = req.body;
+
   const userDB = await User.findOne({ email });
-  const userDBPassword = userDB.password;
-  if (userDBPassword === password) {
+
+  // check if user exists
+  if (!userDB) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (userDB.password === password) {
     res.json(userDB);
   } else {
-    res.json({ message: "Invalid Password" });
+    res.status(401).json({ message: "Invalid Password" });
   }
-  res.json("logged in");
 });
 
-// router.post("/forgot-password", async (req, res) => {
-//   //get the data from postman
-//   const user = req.body;
-//   const email = user.email;
-//   const newPassword = user.newPassword;
-//   const otp = user.otp;
-
-//   //get the data from db
-//   let userDB = await User.findOne({ email });
-
-//   if (otp === "1234") {
-//     userDB.password = newPassword;
-//     await userDB.save();
-//     res.json({ message: "User data updated" });
-//   } else {
-//     res.json({ message: "Invalid OTP" });
-//   }
-// });
-
 router.post("/forgot-password", async (req, res) => {
-//   console.log("forgot-password");  res.json("forgot-password");
-const user = req.body;
-  const email = user.email;
-  const newPassword = user.newPassword;
-  const otp = user.otp;
+  const { email, newPassword, otp } = req.body;
 
-  //get the data from db
-  let userDB = await User.findOne({ email });
+  // get user from DB
+  const userDB = await User.findOne({ email });
 
+  // check if user exists
+  if (!userDB) {
+    return res.json({ message: "User not found" });
+  }
+
+  // check OTP
   if (otp === "1234") {
     userDB.password = newPassword;
     await userDB.save();
     res.json({ message: "User data updated" });
   } else {
     res.json({ message: "Invalid OTP" });
+  }
+});
+
+router.post("/check-user", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.json({ message: "User not found" });
+    }
+
+    res.json({ message: "User exists" });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

@@ -11,9 +11,9 @@ var authRoutes = require('./routes/auth.js')
 
 const app = express()
 app.use(cors()) 
-app.use(bodyParser.json())
+app.use(express.json())
 
-connect('mongodb://localhost:27017',{
+mongoose.connect("mongodb://localhost:27017/userDB", {
 
 }).then(() =>console.log("MongoDB connected"))
 .catch(err => console.log("MongoDb connection error:", err))
@@ -22,3 +22,7 @@ app.use('/', authRoutes)
 app.listen(5005, () => {
   console.log('Server is running on http://localhost:5005')
 })
+
+mongoose.connection.once("open", () => {
+  console.log("Connected DB:", mongoose.connection.name);
+});
